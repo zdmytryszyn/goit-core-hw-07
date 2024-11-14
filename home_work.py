@@ -39,7 +39,7 @@ class Birthday(Field):
         super().__init__(value)
         try:
             if type(value) is str:
-                self.value = datetime.strptime(value, "%d.%m.%Y")
+                self.value = value
             else:
                 raise ValueError
         except ValueError:
@@ -74,7 +74,8 @@ class Record:
     def edit_phone(self, old_phone: str, new_phone: str) -> None:
         try:
             for phone_record in self.phones:
-                if phone_record.value == old_phone and Phone.verify_phone(new_phone):
+                if phone_record.value == old_phone:
+                    Phone.verify_phone(new_phone)
                     phone_record.value = new_phone
                     return
             else:
@@ -83,11 +84,8 @@ class Record:
                     "is not in the record or incorrect input type given, "
                     "must be 'str'."
                 )
-        except PhoneVerificationError:
-            raise ValueError(
-                "New phone value is incorrect. "
-                "Must be 10 digits long, include only letters and be of 'str' type"
-            )
+        except PhoneVerificationError as e:
+            raise ValueError(e)
 
     def find_phone(self, phone: str):
         return next(
@@ -97,7 +95,7 @@ class Record:
 
     def __str__(self) -> str:
         return (
-            f"Contact name: {self.name.value}, "
+            f"Contact name: {self.name.value} , "
             f"phones: {'; '.join((p.value if self.phones else None) for p in self.phones)}"
         )
 
@@ -120,6 +118,9 @@ class AddressBook(UserDict):
         upcoming_birthdays = []
         today = datetime.today()
 
+        def string_to_date(date_string):
+            return datetime.strptime(date_string, "%d.%m.%Y")
+
         def date_to_string(birth_date):
             return birth_date.strftime("%d.%m.%Y")
 
@@ -135,18 +136,20 @@ class AddressBook(UserDict):
             return birthday
 
         for user in self.data:
-            birthday_this_year = self.data[user].birthday.value.replace(year=today.year)
+            if self.data[user].birthday:
+                birthday_date = string_to_date(self.data[user].birthday.value)
+                birthday_this_year = birthday_date.replace(year=today.year)
 
-            if birthday_this_year < today:
-                birthday_this_year = self.data[user].birthday.value.replace(year=today.year + 1)
+                if birthday_this_year < today:
+                    birthday_this_year = birthday_date.replace(year=today.year + 1)
 
-            if 0 <= (birthday_this_year - today).days <= days:
-                birthday_this_year = adjust_for_weekend(birthday_this_year)
-                congratulation_date_str = date_to_string(birthday_this_year)
-                upcoming_birthdays.append(
-                    {
-                        "name": self.data[user].name.value.__str__(),
-                        "birthday": congratulation_date_str
-                    }
-                )
+                if 0 <= (birthday_this_year - today).days <= days:
+                    birthday_this_year = adjust_for_weekend(birthday_this_year)
+                    congratulation_date_str = date_to_string(birthday_this_year)
+                    upcoming_birthdays.append(
+                        {
+                            "name": self.data[user].name.value.__str__(),
+                            "birthday": congratulation_date_str
+                        }
+                    )
         return upcoming_birthdays

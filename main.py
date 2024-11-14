@@ -24,6 +24,8 @@ def input_error(func: Callable) -> Callable:
             Input the name of the contact"
         except PhoneVerificationError as e:
             return e
+        # except AttributeError:
+        #     return "No birth date provided for this record"
     return inner
 
 
@@ -73,7 +75,9 @@ def show_birthday(args: str, book: AddressBook) -> str:
     username, *_ = args
     record = book.find(username)
     if record:
-        return f"Birthday of contact '{record.name}': {record.birthday.value.date()}"
+        if record.birthday:
+            return f"Birthday of contact '{record.name}': {record.birthday.value}"
+        return "No birth date provided for this record."
     return "No such contact"
 
 
@@ -82,11 +86,11 @@ def birthdays(book: AddressBook) -> str:
     return (
             'Upcoming birthdays:\n'
             + '\n'.join(f"{record['name']}: {record['birthday']}" for record in book.get_upcoming_birthdays())
-    )
+    ) if book.get_upcoming_birthdays() else f"No upcoming birthdays in the next 7 days"
 
 
 def show_all(book: AddressBook) -> Iterator:
-    return (f"{value.__str__()}" for value in book.values())
+    return (f"{value.__str__()}, birthday: {value.birthday.value if value.birthday else 'Not provided'}" for value in book.values())
 
 
 def main() -> None:
