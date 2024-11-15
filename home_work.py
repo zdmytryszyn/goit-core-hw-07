@@ -26,7 +26,7 @@ class Phone(Field):
 
     @staticmethod
     def verify_phone(value: str):
-        if type(value) is not str:
+        if not isinstance(value, str):
             raise PhoneVerificationError(f"Incorrect phone data type given: {type(value)}, must be 'str'")
         if len(value) != 10:
             raise PhoneVerificationError("Incorrect length of phone, must be 10 digits")
@@ -36,12 +36,15 @@ class Phone(Field):
 
 class Birthday(Field):
     def __init__(self, value):
+        self.verify_birthday(value=value)
         super().__init__(value)
+
+    @staticmethod
+    def verify_birthday(value: str):
+        if not isinstance(value, str):
+            raise ValueError("Value provided is not of 'str' format")
         try:
-            if type(value) is str:
-                self.value = value
-            else:
-                raise ValueError
+            datetime.strptime(value, "%d.%m.%Y")
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
